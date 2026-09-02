@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">咻咻相册</string>
+    <string name="tagline">零碎时光 · 随手轻相册</string>
+    <string name="permission_title">需要相册访问权限</string>
+    <string name="permission_desc">咻咻相册需要读取您的照片以随机推送整理，且所有操作均在本地进行，绝不上传任何隐私。</string>
+    <string name="grant_permission">开启相册权限</string>
+    <string name="swipe_up_hint">上滑删除</string>
+    <string name="swipe_down_hint">下滑保留</string>
+    <string name="finish_clean">结算清理</string>
+    <string name="undo">撤销</string>
+    <string name="confirm_trash">放入相册回收站</string>
+    <string name="empty_photos">没有更多照片啦！</string>
+</resources>

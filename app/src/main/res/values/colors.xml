@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 粉蓝 Ins 风色彩体系 -->
+    <color name="pink_primary">#FF758F</color>
+    <color name="pink_pastel">#FFB6C1</color>
+    <color name="pink_light">#FFF0F3</color>
+    
+    <color name="blue_primary">#6BA3F5</color>
+    <color name="blue_pastel">#A0C4FF</color>
+    <color name="blue_light">#F0F7FF</color>
+    
+    <color name="cream_bg">#FAF9FC</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="text_main">#2B2D42</color>
+    <color name="text_sub">#8D99AE</color>
+</resources>

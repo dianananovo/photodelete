@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAF9FD" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>咻咻相册</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       咻咻相册：初代经典日系轻灵温润美学 (还原最初版极简视觉)
+       ========================================================================== */
+    html, body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #FAF9FD;
+      touch-action: pan-y;
+      -webkit-user-select: none;
+      user-select: none;
+      overscroll-behavior-y: contain;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    /* 严格锁定图1的黄金内部基准尺寸，通过等比无损缩放铺满屏幕 */
+    .phone-wrapper {
+      width: 440px;
+      height: 920px;
+      background: #FAF9FD;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .card-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 底层卡片：安静在原地，上层滑走后自然缩放就位 */
+    .under-card {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #F8FAFD;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      transform: scale(0.94);
+      opacity: 0.9;
+      pointer-events: none;
+      transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+    }
+
+    /* 顶层卡片：跟手拖拽 */
+    .top-card {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #F8FAFD;
+      box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      cursor: grab;
+      touch-action: none;
+      will-change: transform, opacity;
+    }
+    .top-card:active {
+      cursor: grabbing;
+    }
+
+    /* 媒体自适应浅色衬底容器 (浅色背景 + 高斯模糊柔光，长图横图视频皆完整呈现) */
+    .media-box {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #F0F3F8;
+    }
+
+    .media-blur-bg {
+      position: absolute;
+      inset: -20px;
+      background-size: cover;
+      background-position: center;
+      filter: blur(34px) brightness(0.92);
+      opacity: 0.6;
+      transform: scale(1.15);
+      pointer-events: none;
+    }
+
+    .media-content {
+      position: relative;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      z-index: 5;
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+    }
+  </style>
+<body class="w-full h-full overflow-hidden bg-[#FAF9FD] flex items-center justify-center">
+
+  <div class="phone-wrapper">
+    
+    <!-- 桌面模拟状态栏 (移动端自动隐藏) -->
+    <div class="simulated-status-bar pt-3 px-6 flex justify-between items-center text-xs text-slate-400 font-medium z-30">
+      <span>09:41</span>
+      <div class="w-3.5 h-3.5 rounded-full bg-slate-300/60 mx-auto -ml-3"></div>
+      <div class="flex items-center space-x-1.5">
+        <span>5G</span>
+        <div class="w-5 h-2.5 border border-slate-400 rounded-sm p-0.5 flex items-center">
+          <div class="h-full w-3/4 bg-slate-500 rounded-2xs"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================
+         界面一：首页 (Home Screen - 最初版经典统计看板与开始清理)
+         ======================================================================== -->
+    <div id="homeScreen" class="app-main-content flex-1 flex flex-col justify-between px-6 py-6 relative z-10">
+      <!-- 顶部品牌 -->
+      <div class="pt-2">
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">咻咻相册</h1>
+        <p class="text-xs text-slate-400 font-medium mt-0.5">利用碎片时间 · 轻松清理多余照片与视频</p>
+      </div>
+
+      <!-- 核心统计板块 (相册整理进度 / 待整理 / 已整理 / 进度归零) -->
+      <div class="my-auto space-y-4">
+        
+        <!-- 统计面板主卡片 -->
+        <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center pb-3 border-b border-slate-50">
+            <span class="text-xs font-bold text-slate-700 tracking-wider">相册整理进度</span>
+            <!-- 整理进度归零按钮 (仅重置留下照片，已删除照片永久不恢复) -->
+            <button id="resetProgressBtn" class="text-[11px] font-semibold text-slate-400 hover:text-[#FF7597] flex items-center space-x-1 active:scale-95 transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>进度归零</span>
+            </button>
+          </div>
+
+          <!-- 双柱看板：仅保留待整理与已整理纯粹数字，无任何啰嗦注释 -->
+          <div class="grid grid-cols-2 gap-4 py-4">
+            <!-- 待整理 -->
+            <div class="bg-[#FAF9FD] rounded-2xl p-4 border border-slate-100/60">
+              <div class="text-xs font-semibold text-slate-500">待整理</div>
+              <div id="pendingCountText" class="text-3xl font-extrabold text-slate-900 mt-1.5">0</div>
+            </div>
+
+            <!-- 已整理 -->
+            <div class="bg-[#FAF9FD] rounded-2xl p-4 border border-slate-100/60">
+              <div class="text-xs font-semibold text-slate-500">已整理</div>
+              <div id="processedCountText" class="text-3xl font-extrabold text-slate-900 mt-1.5">0</div>
+            </div>
+          </div>
+
+          <!-- 进度条 -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+              <span>完成度</span>
+              <span id="percentText" class="font-bold text-slate-700">0%</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div id="progressBar" class="h-full bg-[#7AAEF7] rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作手势指引卡片 -->
+        <div class="bg-white/80 rounded-2xl p-4 border border-slate-100/80 space-y-2">
+          <div class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="text-[#FF7597] font-semibold">↑ 上滑删除</div>
+            <div class="text-[#6BA3F5] font-semibold">↓ 下滑保留</div>
+            <div class="text-[#9D4EDD] font-semibold"><svg class="w-3.5 h-3.5 inline-block align-middle -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 12h16m0 0l-4-4m4 4l-4 4M4 12l4-4m-4 4l4 4"/></svg> 移动图片位置</div>
+          </div>
+          <div class="text-center text-[11px] text-slate-400 pt-1 border-t border-slate-100/60">
+            支持长截图·横图·视频·动图，单击放大看大图
+          </div>
+        </div>
+      </div>
+
+      <!-- 开始清理大按钮 (低饱和马卡龙纯蓝，无渐变) -->
+      <div>
+        <button id="startCleanBtn" class="w-full h-[52px] rounded-full bg-[#7AAEF7] text-white text-base font-bold shadow-md shadow-blue-100/60 active:scale-[0.98] transition-all flex items-center justify-center space-x-2">
+          <span>开始清理</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================
+         界面二：清理卡片流 (Clean Screen - 初代经典卡片与手势)
+         ======================================================================== -->
+    <div id="cleanScreen" class="app-main-content flex-1 flex flex-col justify-between px-5 pb-5 pt-2 relative z-10 hidden">
+      
+      <!-- 顶部 Header -->
+      <div class="flex justify-between items-center mb-2 px-1">
+        <div class="flex items-center space-x-2.5">
+          <button id="backToHomeBtn" title="返回首页" class="w-8 h-8 rounded-full bg-white shadow-xs border border-slate-100 flex items-center justify-center text-slate-600 active:scale-90 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-tight">咻咻相册</h1>
+            <p class="text-[10px] text-slate-400 font-medium">单击全屏看大图 · 上滑删 · 下滑留</p>
+          </div>
+        </div>
+
+        <!-- 右上角待确认胶囊 -->
+        <button id="openReviewBtnFromHeader" class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white shadow-xs border border-slate-100 text-xs text-slate-600 font-medium active:scale-95 transition-transform">
+          <span>待确认</span>
+          <span id="trashCountBadge" class="bg-[#F89BB2] text-white rounded-full text-[10px] px-1.5 py-0.2 font-bold min-w-[18px] text-center">0</span>
+        </button>
+      </div>
+
+      <!-- 中间卡片区域 -->
+      <div class="flex-1 relative my-2 px-1">
+        <div class="card-container">
+          
+          <!-- 底层预备卡片 -->
+          <div id="underCard" class="underCard under-card">
+            <div id="underCardMediaContainer" class="media-box"></div>
+            
+            <div class="absolute top-4 left-4 z-10">
+              <span id="underAlbumBadge" class="bg-black/50 text-white text-[11px] px-2.5 py-1 rounded-full font-medium backdrop-blur-md">📁 相册</span>
+            </div>
+            
+            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-5 text-white z-10">
+              <div class="flex justify-between items-center">
+                <span id="underCardDate" class="font-semibold text-sm">2025.10.15</span>
+                <span id="underCardSize" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full font-semibold">4.8 MB</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 顶层活动卡片 (支持拖拽手势 + 轻触单击看大图) -->
+          <div id="topCard" class="topCard top-card">
+            <div id="topCardMediaContainer" class="media-box"></div>
+            
+            <!-- 顶部所在相册展示标签 -->
+            <div class="absolute top-4 left-4 z-20 flex items-center space-x-2">
+              <div class="bg-black/60 text-white text-xs px-3 py-1.2 rounded-full font-semibold backdrop-blur-md border border-white/20 flex items-center space-x-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-amber-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+                </svg>
+                <span id="topAlbumBadge">相机 (Camera)</span>
+              </div>
+              <span id="topTypeBadge" class="bg-white/90 text-slate-800 text-[10px] px-2 py-0.5 rounded-full font-extrabold backdrop-blur-md uppercase tracking-wider hidden">GIF</span>
+            </div>
+
+            <!-- 右上角单击大图提示 -->
+            <div class="absolute top-4 right-4 z-20">
+              <div class="bg-black/40 text-white/90 text-[10px] px-2.5 py-1 rounded-full font-medium backdrop-blur-md border border-white/10 flex items-center space-x-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                <span>单击大图</span>
+              </div>
+            </div>
+
+            <!-- 上滑移入待删徽标 (粉红) -->
+            <div id="badgeDelete" class="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-[#FF7597]/95 text-white font-bold text-sm shadow-lg opacity-0 transition-opacity flex items-center space-x-2 pointer-events-none border border-white/60 z-30">
+              <span>上滑 · 移入待删池</span>
+            </div>
+
+            <!-- 下滑保留徽标 (治愈蓝) -->
+            <div id="badgeKeep" class="absolute bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-[#6BA3F5]/95 text-white font-bold text-sm shadow-lg opacity-0 transition-opacity flex items-center space-x-2 pointer-events-none border border-white/60 z-30">
+              <span>下滑 · 留下它</span>
+            </div>
+
+            <!-- 左右滑移动相册徽标 (神秘紫) -->
+            <div id="badgeMove" class="absolute inset-y-0 my-auto h-12 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-2xl bg-[#9D4EDD]/95 text-white font-bold text-sm shadow-lg opacity-0 transition-opacity flex items-center space-x-2 pointer-events-none border border-white/60 z-30">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              <span>左右拖动 · 移动所在相册</span>
+            </div>
+
+            <!-- 底部拍摄信息栏 (包含尺寸比例标签) -->
+            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-5 text-white pointer-events-none z-20">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                  <span id="topCardDate" class="font-semibold text-sm drop-shadow-sm">2025.10.15</span>
+                  <span id="topCardRatio" class="text-[10px] bg-white/20 text-white/90 px-1.5 py-0.2 rounded font-medium">9:16</span>
+                </div>
+                <span id="topCardSize" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full backdrop-blur-md font-semibold">4.8 MB</span>
+              </div>
+              <p id="topCardName" class="text-xs text-white/80 mt-1 truncate">IMG_20251015_142011.jpg</p>
+            </div>
+          </div>
+
+          <!-- 队列刷完状态 -->
+          <div id="emptyCard" class="hidden absolute inset-0 flex-col items-center justify-center text-center p-6 bg-white rounded-[28px] shadow-sm">
+            <div class="text-4xl mb-3">🌿</div>
+            <h2 class="text-base font-bold text-slate-800">未整理照片与视频全部刷完啦</h2>
+            <p class="text-xs text-slate-400 mt-1">点击下方直接结束本次清理，复核待删照片</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 底部操作栏：撤回键 + 纯净【结束本次清理】(纯粉纯蓝、无渐变、略微加长) -->
+      <div class="flex items-center space-x-3 pt-2 px-1">
+        <button id="btnUndo" disabled class="h-[48px] px-6 rounded-full bg-[#F89BB2] text-white text-xs font-bold shadow-sm active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center space-x-1.5">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+          <span>撤回</span>
+        </button>
+
+        <button id="btnFinishClean" class="flex-1 h-[48px] px-6 rounded-full bg-[#7AAEF7] text-white text-xs font-bold shadow-sm active:scale-[0.98] transition-all flex items-center justify-center">
+          <span>结束本次清理</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================
+         弹窗：移动相册选择面板
+         ======================================================================== -->
+    <div id="moveAlbumModal" class="absolute inset-0 bg-black/50 backdrop-blur-xs z-40 hidden flex flex-col justify-end">
+      <div class="bg-white rounded-t-[32px] p-6 space-y-4 max-h-[75vh] flex flex-col shadow-2xl">
+        <div class="w-10 h-1.2 bg-slate-200 rounded-full mx-auto -mt-1"></div>
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">移动到相册</h3>
+            <p class="text-xs text-slate-400 mt-0.5">当前位于：<span id="currentAlbumName" class="font-semibold text-slate-700">相机</span></p>
+          </div>
+          <button id="closeMoveAlbumBtn" class="text-xs text-slate-400 px-2 py-1">取消</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 overflow-y-auto max-h-64 py-1" id="albumSelectList"></div>
+
+        <button id="createNewAlbumBtn" class="w-full py-3 rounded-2xl border border-dashed border-slate-300 text-xs font-semibold text-slate-600 flex items-center justify-center space-x-1.5 active:bg-slate-50">
+          <span>+ 新建相册</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================
+         界面三：二次审核待删照片抽屉界面 (Review Screen)
+         ======================================================================== -->
+    <div id="reviewScreen" class="absolute inset-0 bg-[#FAF9FD] z-30 flex flex-col justify-between hidden">
+      <div class="pt-4 px-5 pb-3 flex justify-between items-center border-b border-slate-100 bg-white/80 backdrop-blur-md">
+        <div class="flex items-center space-x-3">
+          <button id="closeReviewBtn" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-600 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h2 class="font-bold text-slate-900 text-base">二次审核待删照片</h2>
+            <p id="reviewSubtitle" class="text-[11px] text-slate-400">共 0 张照片待核对</p>
+          </div>
+        </div>
+
+        <button id="toggleSelectAllBtn" class="text-xs font-semibold text-[#6BA3F5] px-2 py-1">全选</button>
+      </div>
+
+      <div id="reviewGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-2.5 content-start"></div>
+
+      <div class="p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex justify-between items-center">
+        <div>
+          <div id="selectedSummary" class="text-sm font-bold text-slate-900">已选中 0 张</div>
+          <div id="spaceSummary" class="text-xs text-slate-400">预计释放 0 MB</div>
+        </div>
+        <button id="confirmTrashBtn" class="px-6 h-[44px] rounded-full bg-[#F89BB2] text-white text-xs font-bold shadow-md shadow-pink-100/50 active:scale-95 transition-all flex items-center space-x-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>放入相册回收站</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================
+         全屏大图/视频预览 Modal (单击直接打开，再次单击任意位置即可关闭)
+         ======================================================================== -->
+    <div id="previewModal" class="absolute inset-0 bg-black/95 z-50 hidden flex flex-col justify-between cursor-pointer select-none">
+      <!-- 顶部信息栏 -->
+      <div class="flex justify-between items-center text-white pt-6 px-4 z-10 pointer-events-none">
+        <div>
+          <div id="previewName" class="font-medium text-sm truncate max-w-[220px]">IMG_PREVIEW.jpg</div>
+          <div id="previewMeta" class="text-xs text-white/60 mt-0.5">2025.10.15 • 4.8 MB</div>
+        </div>
+        <span class="text-[11px] bg-white/20 px-2.5 py-1 rounded-full text-white/80">轻触退出</span>
+      </div>
+
+      <!-- 大图展示区 (完整自适应长图、宽图、方图、视频) -->
+      <div id="previewMediaBox" class="flex-1 flex items-center justify-center p-3 overflow-y-auto"></div>
+
+      <div class="text-center text-xs text-white/50 pb-4 z-10 pointer-events-none">
+        再次单击屏幕任意位置关闭大图
+      </div>
+    </div>
+
+    <!-- 结算成功弹窗 -->
+    <div id="resultModal" class="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-[320px] text-center shadow-2xl">
+        <div class="w-14 h-14 rounded-full bg-pink-50 text-2xl flex items-center justify-center mx-auto mb-3">
+          ✨
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">清理完成！</h3>
+        <p id="resultDesc" class="text-xs text-slate-500 mt-2 leading-relaxed">已安全将照片移入系统相册回收站</p>
+        <button id="finishToHomeBtn" class="mt-5 w-full h-[46px] rounded-full bg-[#7AAEF7] text-white font-bold text-xs shadow-md shadow-blue-100/50 active:scale-95 transition-all flex items-center justify-center">
+          返回首页
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ========================================================================
+       样本数据：涵盖各类比例 (横图/长截图/动图GIF/正方形/短视频/竖屏)
+       ======================================================================== */
+    const ALL_PHOTOS = [
+  {
+    "id": 1,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "相机 (Camera)",
+    "name": "IMG_20251128_0001.jpg",
+    "url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.28",
+    "size": "1.2 MB",
+    "bytes": 1258291
+  },
+  {
+    "id": 2,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20251125_0002.jpg",
+    "url": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.25",
+    "size": "1.4 MB",
+    "bytes": 1468006
+  },
+  {
+    "id": 3,
+    "type": "gif",
+    "ratioDesc": "动图 GIF",
+    "album": "微信 (WeChat)",
+    "name": "ANIM_CAT_DANCE.gif",
+    "url": "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
+    "date": "2025.11.22",
+    "size": "1.5 MB",
+    "bytes": 1572864
+  },
+  {
+    "id": 4,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20251119_0004.jpg",
+    "url": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.19",
+    "size": "1.7 MB",
+    "bytes": 1782579
+  },
+  {
+    "id": 5,
+    "type": "video",
+    "ratioDesc": "视频 9:16",
+    "album": "日常拍摄",
+    "name": "VID_TREE_BREEZE.mp4",
+    "url": "https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-small.mp4",
+    "date": "2025.11.16",
+    "size": "1.9 MB",
+    "bytes": 1992294,
+    "duration": "0:12"
+  },
+  {
+    "id": 6,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "下载 (Download)",
+    "name": "IMG_20251113_0006.jpg",
+    "url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.13",
+    "size": "2.0 MB",
+    "bytes": 2097152
+  },
+  {
+    "id": 7,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "风景旅行",
+    "name": "IMG_20251110_0007.jpg",
+    "url": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.10",
+    "size": "2.2 MB",
+    "bytes": 2306867
+  },
+  {
+    "id": 8,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "美食探店",
+    "name": "IMG_20251107_0008.jpg",
+    "url": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.07",
+    "size": "2.4 MB",
+    "bytes": 2516582
+  },
+  {
+    "id": 9,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "工作文档",
+    "name": "IMG_20251104_0009.jpg",
+    "url": "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.04",
+    "size": "2.6 MB",
+    "bytes": 2726297
+  },
+  {
+    "id": 10,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "相机 (Camera)",
+    "name": "IMG_20251128_0010.jpg",
+    "url": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.11.28",
+    "size": "2.7 MB",
+    "bytes": 2831155
+  },
+  {
+    "id": 11,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20251025_0011.jpg",
+    "url": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.25",
+    "size": "2.9 MB",
+    "bytes": 3040870
+  },
+  {
+    "id": 12,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20251022_0012.jpg",
+    "url": "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.22",
+    "size": "3.1 MB",
+    "bytes": 3250585
+  },
+  {
+    "id": 13,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20251019_0013.jpg",
+    "url": "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.19",
+    "size": "3.2 MB",
+    "bytes": 3355443
+  },
+  {
+    "id": 14,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "日常拍摄",
+    "name": "IMG_20251016_0014.jpg",
+    "url": "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.16",
+    "size": "3.4 MB",
+    "bytes": 3565158
+  },
+  {
+    "id": 15,
+    "type": "video",
+    "ratioDesc": "视频 16:9",
+    "album": "下载 (Download)",
+    "name": "VID_OCEAN_WAVES.mp4",
+    "url": "https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-small.mp4",
+    "date": "2025.10.13",
+    "size": "3.6 MB",
+    "bytes": 3774873,
+    "duration": "0:12"
+  },
+  {
+    "id": 16,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "风景旅行",
+    "name": "IMG_20251010_0016.jpg",
+    "url": "https://images.unsplash.com/photo-1475921075678-b0218225f88b?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.10",
+    "size": "3.8 MB",
+    "bytes": 3984588
+  },
+  {
+    "id": 17,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "美食探店",
+    "name": "IMG_20251007_0017.jpg",
+    "url": "https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.07",
+    "size": "3.9 MB",
+    "bytes": 4089446
+  },
+  {
+    "id": 18,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "工作文档",
+    "name": "IMG_20251004_0018.jpg",
+    "url": "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.04",
+    "size": "4.1 MB",
+    "bytes": 4299161
+  },
+  {
+    "id": 19,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "相机 (Camera)",
+    "name": "IMG_20251028_0019.jpg",
+    "url": "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.28",
+    "size": "4.3 MB",
+    "bytes": 4508876
+  },
+  {
+    "id": 20,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20251025_0020.jpg",
+    "url": "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.10.25",
+    "size": "4.4 MB",
+    "bytes": 4613734
+  },
+  {
+    "id": 21,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250922_0021.jpg",
+    "url": "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.22",
+    "size": "4.6 MB",
+    "bytes": 4823449
+  },
+  {
+    "id": 22,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250919_0022.jpg",
+    "url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.19",
+    "size": "4.8 MB",
+    "bytes": 5033164
+  },
+  {
+    "id": 23,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "日常拍摄",
+    "name": "IMG_20250916_0023.jpg",
+    "url": "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.16",
+    "size": "4.9 MB",
+    "bytes": 5138022
+  },
+  {
+    "id": 24,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "下载 (Download)",
+    "name": "IMG_20250913_0024.jpg",
+    "url": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.13",
+    "size": "5.1 MB",
+    "bytes": 5347737
+  },
+  {
+    "id": 25,
+    "type": "gif",
+    "ratioDesc": "动图 GIF",
+    "album": "风景旅行",
+    "name": "ANIM_DOG_HAPPY.gif",
+    "url": "https://media.giphy.com/media/unQ3IJU2RG7DO/giphy.gif",
+    "date": "2025.09.10",
+    "size": "5.3 MB",
+    "bytes": 5557452
+  },
+  {
+    "id": 26,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "美食探店",
+    "name": "IMG_20250907_0026.jpg",
+    "url": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.07",
+    "size": "5.5 MB",
+    "bytes": 5767168
+  },
+  {
+    "id": 27,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "工作文档",
+    "name": "IMG_20250904_0027.jpg",
+    "url": "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.04",
+    "size": "5.6 MB",
+    "bytes": 5872025
+  },
+  {
+    "id": 28,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250928_0028.jpg",
+    "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.28",
+    "size": "5.8 MB",
+    "bytes": 6081740
+  },
+  {
+    "id": 29,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250925_0029.jpg",
+    "url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.25",
+    "size": "6.0 MB",
+    "bytes": 6291456
+  },
+  {
+    "id": 30,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250922_0030.jpg",
+    "url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.09.22",
+    "size": "6.1 MB",
+    "bytes": 6396313
+  },
+  {
+    "id": 31,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250819_0031.jpg",
+    "url": "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.19",
+    "size": "6.3 MB",
+    "bytes": 6606028
+  },
+  {
+    "id": 32,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "日常拍摄",
+    "name": "IMG_20250816_0032.jpg",
+    "url": "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.16",
+    "size": "6.5 MB",
+    "bytes": 6815744
+  },
+  {
+    "id": 33,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "下载 (Download)",
+    "name": "IMG_20250813_0033.jpg",
+    "url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.13",
+    "size": "6.6 MB",
+    "bytes": 6920601
+  },
+  {
+    "id": 34,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "风景旅行",
+    "name": "IMG_20250810_0034.jpg",
+    "url": "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.10",
+    "size": "6.8 MB",
+    "bytes": 7130316
+  },
+  {
+    "id": 35,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "美食探店",
+    "name": "IMG_20250807_0035.jpg",
+    "url": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.07",
+    "size": "7.0 MB",
+    "bytes": 7340032
+  },
+  {
+    "id": 36,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "工作文档",
+    "name": "IMG_20250804_0036.jpg",
+    "url": "https://images.unsplash.com/photo-1480429370139-e0132c086e2a?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.04",
+    "size": "7.2 MB",
+    "bytes": 7549747
+  },
+  {
+    "id": 37,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250828_0037.jpg",
+    "url": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.28",
+    "size": "7.3 MB",
+    "bytes": 7654604
+  },
+  {
+    "id": 38,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250825_0038.jpg",
+    "url": "https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.25",
+    "size": "7.5 MB",
+    "bytes": 7864320
+  },
+  {
+    "id": 39,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250822_0039.jpg",
+    "url": "https://images.unsplash.com/photo-1485217988980-11786ced9454?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.22",
+    "size": "7.7 MB",
+    "bytes": 8074035
+  },
+  {
+    "id": 40,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250819_0040.jpg",
+    "url": "https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.08.19",
+    "size": "1.3 MB",
+    "bytes": 1363148
+  },
+  {
+    "id": 41,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "日常拍摄",
+    "name": "IMG_20250716_0041.jpg",
+    "url": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.16",
+    "size": "1.5 MB",
+    "bytes": 1572864
+  },
+  {
+    "id": 42,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "下载 (Download)",
+    "name": "IMG_20250713_0042.jpg",
+    "url": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.13",
+    "size": "1.7 MB",
+    "bytes": 1782579
+  },
+  {
+    "id": 43,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "风景旅行",
+    "name": "IMG_20250710_0043.jpg",
+    "url": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.10",
+    "size": "1.8 MB",
+    "bytes": 1887436
+  },
+  {
+    "id": 44,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "美食探店",
+    "name": "IMG_20250707_0044.jpg",
+    "url": "https://images.unsplash.com/photo-1540189549386-81912f2c8d20?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.07",
+    "size": "2.0 MB",
+    "bytes": 2097152
+  },
+  {
+    "id": 45,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "工作文档",
+    "name": "IMG_20250704_0045.jpg",
+    "url": "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.04",
+    "size": "2.2 MB",
+    "bytes": 2306867
+  },
+  {
+    "id": 46,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250728_0046.jpg",
+    "url": "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.28",
+    "size": "2.4 MB",
+    "bytes": 2516582
+  },
+  {
+    "id": 47,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250725_0047.jpg",
+    "url": "https://images.unsplash.com/photo-1484723091739-00f7e53f1ff5?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.25",
+    "size": "2.5 MB",
+    "bytes": 2621440
+  },
+  {
+    "id": 48,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250722_0048.jpg",
+    "url": "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.22",
+    "size": "2.7 MB",
+    "bytes": 2831155
+  },
+  {
+    "id": 49,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250719_0049.jpg",
+    "url": "https://images.unsplash.com/photo-1499028344343-cd1730cf9572?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.19",
+    "size": "2.9 MB",
+    "bytes": 3040870
+  },
+  {
+    "id": 50,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "日常拍摄",
+    "name": "IMG_20250716_0050.jpg",
+    "url": "https://images.unsplash.com/photo-1497888329096-51c29bbff0ea?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.07.16",
+    "size": "3.0 MB",
+    "bytes": 3145728
+  },
+  {
+    "id": 51,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "下载 (Download)",
+    "name": "IMG_20250613_0051.jpg",
+    "url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.13",
+    "size": "3.2 MB",
+    "bytes": 3355443
+  },
+  {
+    "id": 52,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "风景旅行",
+    "name": "IMG_20250610_0052.jpg",
+    "url": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.10",
+    "size": "3.4 MB",
+    "bytes": 3565158
+  },
+  {
+    "id": 53,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "美食探店",
+    "name": "IMG_20250607_0053.jpg",
+    "url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.07",
+    "size": "3.5 MB",
+    "bytes": 3670016
+  },
+  {
+    "id": 54,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "工作文档",
+    "name": "IMG_20250604_0054.jpg",
+    "url": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.04",
+    "size": "3.7 MB",
+    "bytes": 3879731
+  },
+  {
+    "id": 55,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250628_0055.jpg",
+    "url": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.28",
+    "size": "3.9 MB",
+    "bytes": 4089446
+  },
+  {
+    "id": 56,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250625_0056.jpg",
+    "url": "https://images.unsplash.com/photo-1493770348161-369560ae357d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.25",
+    "size": "4.1 MB",
+    "bytes": 4299161
+  },
+  {
+    "id": 57,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250622_0057.jpg",
+    "url": "https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.22",
+    "size": "4.2 MB",
+    "bytes": 4404019
+  },
+  {
+    "id": 58,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250619_0058.jpg",
+    "url": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.19",
+    "size": "4.4 MB",
+    "bytes": 4613734
+  },
+  {
+    "id": 59,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "日常拍摄",
+    "name": "IMG_20250616_0059.jpg",
+    "url": "https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.16",
+    "size": "4.6 MB",
+    "bytes": 4823449
+  },
+  {
+    "id": 60,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "下载 (Download)",
+    "name": "IMG_20250613_0060.jpg",
+    "url": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.06.13",
+    "size": "4.7 MB",
+    "bytes": 4928307
+  },
+  {
+    "id": 61,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "风景旅行",
+    "name": "IMG_20250510_0061.jpg",
+    "url": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.10",
+    "size": "4.9 MB",
+    "bytes": 5138022
+  },
+  {
+    "id": 62,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "美食探店",
+    "name": "IMG_20250507_0062.jpg",
+    "url": "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.07",
+    "size": "5.1 MB",
+    "bytes": 5347737
+  },
+  {
+    "id": 63,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "工作文档",
+    "name": "IMG_20250504_0063.jpg",
+    "url": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.04",
+    "size": "5.2 MB",
+    "bytes": 5452595
+  },
+  {
+    "id": 64,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250528_0064.jpg",
+    "url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.28",
+    "size": "5.4 MB",
+    "bytes": 5662310
+  },
+  {
+    "id": 65,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250525_0065.jpg",
+    "url": "https://images.unsplash.com/photo-1519741497674-611481863552?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.25",
+    "size": "5.6 MB",
+    "bytes": 5872025
+  },
+  {
+    "id": 66,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250522_0066.jpg",
+    "url": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.22",
+    "size": "5.8 MB",
+    "bytes": 6081740
+  },
+  {
+    "id": 67,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250519_0067.jpg",
+    "url": "https://images.unsplash.com/photo-1519222970733-f546def4a304?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.19",
+    "size": "5.9 MB",
+    "bytes": 6186598
+  },
+  {
+    "id": 68,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "日常拍摄",
+    "name": "IMG_20250516_0068.jpg",
+    "url": "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.16",
+    "size": "6.1 MB",
+    "bytes": 6396313
+  },
+  {
+    "id": 69,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "下载 (Download)",
+    "name": "IMG_20250513_0069.jpg",
+    "url": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.13",
+    "size": "6.3 MB",
+    "bytes": 6606028
+  },
+  {
+    "id": 70,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "风景旅行",
+    "name": "IMG_20250510_0070.jpg",
+    "url": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.05.10",
+    "size": "6.4 MB",
+    "bytes": 6710886
+  },
+  {
+    "id": 71,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "美食探店",
+    "name": "IMG_20250407_0071.jpg",
+    "url": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.07",
+    "size": "6.6 MB",
+    "bytes": 6920601
+  },
+  {
+    "id": 72,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "工作文档",
+    "name": "IMG_20250404_0072.jpg",
+    "url": "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.04",
+    "size": "6.8 MB",
+    "bytes": 7130316
+  },
+  {
+    "id": 73,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250428_0073.jpg",
+    "url": "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.28",
+    "size": "6.9 MB",
+    "bytes": 7235174
+  },
+  {
+    "id": 74,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250425_0074.jpg",
+    "url": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.25",
+    "size": "7.1 MB",
+    "bytes": 7444889
+  },
+  {
+    "id": 75,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250422_0075.jpg",
+    "url": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.22",
+    "size": "7.3 MB",
+    "bytes": 7654604
+  },
+  {
+    "id": 76,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250419_0076.jpg",
+    "url": "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.19",
+    "size": "7.5 MB",
+    "bytes": 7864320
+  },
+  {
+    "id": 77,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "日常拍摄",
+    "name": "IMG_20250416_0077.jpg",
+    "url": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.16",
+    "size": "7.6 MB",
+    "bytes": 7969177
+  },
+  {
+    "id": 78,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "下载 (Download)",
+    "name": "IMG_20250413_0078.jpg",
+    "url": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.13",
+    "size": "1.3 MB",
+    "bytes": 1363148
+  },
+  {
+    "id": 79,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "风景旅行",
+    "name": "IMG_20250410_0079.jpg",
+    "url": "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.10",
+    "size": "1.5 MB",
+    "bytes": 1572864
+  },
+  {
+    "id": 80,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "美食探店",
+    "name": "IMG_20250407_0080.jpg",
+    "url": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.04.07",
+    "size": "1.6 MB",
+    "bytes": 1677721
+  },
+  {
+    "id": 81,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "工作文档",
+    "name": "IMG_20250304_0081.jpg",
+    "url": "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.04",
+    "size": "1.8 MB",
+    "bytes": 1887436
+  },
+  {
+    "id": 82,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250328_0082.jpg",
+    "url": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.28",
+    "size": "2.0 MB",
+    "bytes": 2097152
+  },
+  {
+    "id": 83,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250325_0083.jpg",
+    "url": "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.25",
+    "size": "2.1 MB",
+    "bytes": 2202009
+  },
+  {
+    "id": 84,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250322_0084.jpg",
+    "url": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.22",
+    "size": "2.3 MB",
+    "bytes": 2411724
+  },
+  {
+    "id": 85,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250319_0085.jpg",
+    "url": "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.19",
+    "size": "2.5 MB",
+    "bytes": 2621440
+  },
+  {
+    "id": 86,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "日常拍摄",
+    "name": "IMG_20250316_0086.jpg",
+    "url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.16",
+    "size": "2.7 MB",
+    "bytes": 2831155
+  },
+  {
+    "id": 87,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "下载 (Download)",
+    "name": "IMG_20250313_0087.jpg",
+    "url": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.13",
+    "size": "2.8 MB",
+    "bytes": 2936012
+  },
+  {
+    "id": 88,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "风景旅行",
+    "name": "IMG_20250310_0088.jpg",
+    "url": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.10",
+    "size": "3.0 MB",
+    "bytes": 3145728
+  },
+  {
+    "id": 89,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "美食探店",
+    "name": "IMG_20250307_0089.jpg",
+    "url": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.07",
+    "size": "3.2 MB",
+    "bytes": 3355443
+  },
+  {
+    "id": 90,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "工作文档",
+    "name": "IMG_20250304_0090.jpg",
+    "url": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.03.04",
+    "size": "3.3 MB",
+    "bytes": 3460300
+  },
+  {
+    "id": 91,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250228_0091.jpg",
+    "url": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.28",
+    "size": "3.5 MB",
+    "bytes": 3670016
+  },
+  {
+    "id": 92,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "截屏 (Screenshots)",
+    "name": "IMG_20250225_0092.jpg",
+    "url": "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.25",
+    "size": "3.7 MB",
+    "bytes": 3879731
+  },
+  {
+    "id": 93,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "微信 (WeChat)",
+    "name": "IMG_20250222_0093.jpg",
+    "url": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.22",
+    "size": "3.8 MB",
+    "bytes": 3984588
+  },
+  {
+    "id": 94,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "小红书 (Xiaohongshu)",
+    "name": "IMG_20250219_0094.jpg",
+    "url": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.19",
+    "size": "4.0 MB",
+    "bytes": 4194304
+  },
+  {
+    "id": 95,
+    "type": "image",
+    "ratioDesc": "超长截图 9:21",
+    "album": "日常拍摄",
+    "name": "IMG_20250216_0095.jpg",
+    "url": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.16",
+    "size": "4.2 MB",
+    "bytes": 4404019
+  },
+  {
+    "id": 96,
+    "type": "image",
+    "ratioDesc": "宽屏 21:9",
+    "album": "下载 (Download)",
+    "name": "IMG_20250213_0096.jpg",
+    "url": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.13",
+    "size": "4.4 MB",
+    "bytes": 4613734
+  },
+  {
+    "id": 97,
+    "type": "image",
+    "ratioDesc": "竖屏 9:16",
+    "album": "风景旅行",
+    "name": "IMG_20250210_0097.jpg",
+    "url": "https://images.unsplash.com/photo-1556742049-0a67e557224f?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.10",
+    "size": "4.5 MB",
+    "bytes": 4718592
+  },
+  {
+    "id": 98,
+    "type": "image",
+    "ratioDesc": "横屏 16:9",
+    "album": "美食探店",
+    "name": "IMG_20250207_0098.jpg",
+    "url": "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.07",
+    "size": "4.7 MB",
+    "bytes": 4928307
+  },
+  {
+    "id": 99,
+    "type": "image",
+    "ratioDesc": "正方形 1:1",
+    "album": "工作文档",
+    "name": "IMG_20250204_0099.jpg",
+    "url": "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.04",
+    "size": "4.9 MB",
+    "bytes": 5138022
+  },
+  {
+    "id": 100,
+    "type": "image",
+    "ratioDesc": "竖屏 4:3",
+    "album": "相机 (Camera)",
+    "name": "IMG_20250228_0100.jpg",
+    "url": "https://images.unsplash.com/photo-1556742208-99ec1ae72fe6?w=900&auto=format&fit=crop&q=80",
+    "date": "2025.02.28",
+    "size": "5.0 MB",
+    "bytes": 5242880
+  }
+];
+
+    let AVAILABLE_ALBUMS = [
+      "我的收藏", "精选灵感", "工作文档", "生活日常", "旅游记录", "临时缓存"
+    ];
+
+    /* 数据持久化：永久已删除集合 (deletedSet) 与 已翻阅留下集合 (keptSet) 隔离 */
+    function loadDeletedSet() {
+      try {
+        const saved = localStorage.getItem("xiuxiu_v100_deleted_ids");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+      } catch (e) {
+        return new Set();
+      }
+    }
+    function saveDeletedSet(set) {
+      try {
+        localStorage.setItem("xiuxiu_v100_deleted_ids", JSON.stringify(Array.from(set)));
+      } catch (e) {}
+    }
+
+    function loadKeptSet() {
+      try {
+        const saved = localStorage.getItem("xiuxiu_v100_kept_ids");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+      } catch (e) {
+        return new Set();
+      }
+    }
+    function saveKeptSet(set) {
+      try {
+        localStorage.setItem("xiuxiu_v100_kept_ids", JSON.stringify(Array.from(set)));
+      } catch (e) {}
+    }
+
+    let deletedSet = loadDeletedSet();
+    let keptSet = loadKeptSet();
+
+    let queue = [];
+    let trashPool = [];
+    let selectedForDelete = new Set();
+    let history = [];
+    let isAnimating = false;
+    let pendingMovePhoto = null;
+
+    function triggerHaptic(ms = 12) {
+      if (navigator.vibrate) {
+        try { navigator.vibrate(ms); } catch (e) {}
+      }
+    }
+
+    function shuffleArray(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
+    }
+
+    // DOM 引用
+    const homeScreen = document.getElementById("homeScreen");
+    const cleanScreen = document.getElementById("cleanScreen");
+    const reviewScreen = document.getElementById("reviewScreen");
+    const startCleanBtn = document.getElementById("startCleanBtn");
+    const backToHomeBtn = document.getElementById("backToHomeBtn");
+    const resetProgressBtn = document.getElementById("resetProgressBtn");
+    
+    const pendingCountText = document.getElementById("pendingCountText");
+    const processedCountText = document.getElementById("processedCountText");
+    const percentText = document.getElementById("percentText");
+    const progressBar = document.getElementById("progressBar");
+
+    const topCard = document.getElementById("topCard");
+    const topCardMediaContainer = document.getElementById("topCardMediaContainer");
+    const topAlbumBadge = document.getElementById("topAlbumBadge");
+    const topTypeBadge = document.getElementById("topTypeBadge");
+    const topCardDate = document.getElementById("topCardDate");
+    const topCardRatio = document.getElementById("topCardRatio");
+    const topCardSize = document.getElementById("topCardSize");
+    const topCardName = document.getElementById("topCardName");
+    
+    const underCard = document.getElementById("underCard");
+    const underCardMediaContainer = document.getElementById("underCardMediaContainer");
+    const underAlbumBadge = document.getElementById("underAlbumBadge");
+    const underCardDate = document.getElementById("underCardDate");
+    const underCardSize = document.getElementById("underCardSize");
+    const emptyCard = document.getElementById("emptyCard");
+
+    const badgeDelete = document.getElementById("badgeDelete");
+    const badgeKeep = document.getElementById("badgeKeep");
+    const badgeMove = document.getElementById("badgeMove");
+    const trashCountBadge = document.getElementById("trashCountBadge");
+    const openReviewBtnFromHeader = document.getElementById("openReviewBtnFromHeader");
+    const btnUndo = document.getElementById("btnUndo");
+    const btnFinishClean = document.getElementById("btnFinishClean");
+
+    const moveAlbumModal = document.getElementById("moveAlbumModal");
+    const currentAlbumName = document.getElementById("currentAlbumName");
+    const albumSelectList = document.getElementById("albumSelectList");
+    const closeMoveAlbumBtn = document.getElementById("closeMoveAlbumBtn");
+    const createNewAlbumBtn = document.getElementById("createNewAlbumBtn");
+
+    const closeReviewBtn = document.getElementById("closeReviewBtn");
+    const reviewGrid = document.getElementById("reviewGrid");
+    const reviewSubtitle = document.getElementById("reviewSubtitle");
+    const selectedSummary = document.getElementById("selectedSummary");
+    const spaceSummary = document.getElementById("spaceSummary");
+    const toggleSelectAllBtn = document.getElementById("toggleSelectAllBtn");
+    const confirmTrashBtn = document.getElementById("confirmTrashBtn");
+    
+    const previewModal = document.getElementById("previewModal");
+    const previewMediaBox = document.getElementById("previewMediaBox");
+    const previewName = document.getElementById("previewName");
+    const previewMeta = document.getElementById("previewMeta");
+    
+    const resultModal = document.getElementById("resultModal");
+    const resultDesc = document.getElementById("resultDesc");
+    const finishToHomeBtn = document.getElementById("finishToHomeBtn");
+
+    function getRemainingValidPhotos() {
+      return ALL_PHOTOS.filter(p => !deletedSet.has(p.id));
+    }
+
+    function updateHomeDashboard() {
+      const remainingPhotos = getRemainingValidPhotos();
+      const totalRemaining = remainingPhotos.length;
+      
+      const processedCount = remainingPhotos.filter(p => keptSet.has(p.id)).length;
+      const pendingCount = Math.max(totalRemaining - processedCount, 0);
+      const percent = totalRemaining === 0 ? 100 : Math.round((processedCount / totalRemaining) * 100);
+
+      pendingCountText.innerText = pendingCount;
+      processedCountText.innerText = processedCount;
+      percentText.innerText = `${percent}%`;
+      progressBar.style.width = `${percent}%`;
+    }
+
+    // 进度归零：只重置留在相册里的照片，已被移入回收站的照片永久不恢复
+    resetProgressBtn.addEventListener("click", () => {
+      triggerHaptic(15);
+      if (confirm("确定要将相册整理进度归零吗？\n\n注意：此操作仅将【已经整理过且留下的照片】重新放入待整理队列；【已删除的照片】不会被恢复。")) {
+        keptSet.clear();
+        saveKeptSet(keptSet);
+        updateHomeDashboard();
+      }
+    });
+
+    startCleanBtn.addEventListener("click", () => {
+      triggerHaptic(15);
+      const remainingPhotos = getRemainingValidPhotos();
+      let unhandled = remainingPhotos.filter(p => !keptSet.has(p.id));
+
+      if (unhandled.length === 0) {
+        if (remainingPhotos.length === 0) {
+          alert("相册中的照片已全部被清理完毕！");
+          return;
+        }
+        alert("相册中所有剩余照片均已翻阅完毕！已为您重置留下照片的进度，开启新一轮翻阅。");
+        keptSet.clear();
+        saveKeptSet(keptSet);
+        unhandled = [...remainingPhotos];
+      }
+
+      queue = shuffleArray(unhandled);
+      trashPool = [];
+      selectedForDelete.clear();
+      history = [];
+
+      homeScreen.classList.add("hidden");
+      cleanScreen.classList.remove("hidden");
+      setupCurrentAndNextCards();
+    });
+
+    backToHomeBtn.addEventListener("click", () => {
+      triggerHaptic(10);
+      cleanScreen.classList.add("hidden");
+      homeScreen.classList.remove("hidden");
+      updateHomeDashboard();
+    });
+
+    // 浅色衬底渲染：背景使用柔和高斯模糊，前景 contain 完整显示不切图
+    function renderAdaptiveMedia(photo) {
+      if (photo.type === "video") {
+        return `
+          <div class="media-blur-bg" style="background-image: url('${photo.url}')"></div>
+          <video src="${photo.url}" autoplay loop muted playsinline class="media-content"></video>
+        `;
+      }
+      return `
+        <div class="media-blur-bg" style="background-image: url('${photo.url}')"></div>
+        <img src="${photo.url}" class="media-content" alt="${photo.name}" />
+      `;
+    }
+
+    function setupCurrentAndNextCards() {
+      trashCountBadge.innerText = trashPool.length;
+      btnUndo.disabled = history.length === 0;
+
+      if (queue.length === 0) {
+        topCard.classList.add("hidden");
+        underCard.classList.add("hidden");
+        emptyCard.classList.remove("hidden");
+        emptyCard.classList.add("flex");
+        return;
+      }
+
+      emptyCard.classList.add("hidden");
+      emptyCard.classList.remove("flex");
+
+      const cur = queue[0];
+      topCard.classList.remove("hidden");
+      topCardMediaContainer.innerHTML = renderAdaptiveMedia(cur);
+      topAlbumBadge.innerText = cur.album;
+      topCardRatio.innerText = cur.ratioDesc || "原比例";
+      
+      if (cur.type === "gif") {
+        topTypeBadge.innerText = "GIF 动图";
+        topTypeBadge.classList.remove("hidden");
+      } else if (cur.type === "video") {
+        topTypeBadge.innerText = `视频 ${cur.duration || ''}`;
+        topTypeBadge.classList.remove("hidden");
+      } else {
+        topTypeBadge.classList.add("hidden");
+      }
+
+      topCardDate.innerText = cur.date;
+      topCardSize.innerText = cur.size;
+      topCardName.innerText = cur.name;
+
+      topCard.style.transition = 'none';
+      topCard.style.transform = 'translate(0px, 0px) rotate(0deg)';
+      topCard.style.opacity = '1';
+      badgeDelete.style.opacity = '0';
+      badgeKeep.style.opacity = '0';
+      badgeMove.style.opacity = '0';
+
+      if (queue.length > 1) {
+        const next = queue[1];
+        underCard.classList.remove("hidden");
+        underCardMediaContainer.innerHTML = renderAdaptiveMedia(next);
+        underAlbumBadge.innerText = `📁 ${next.album}`;
+        underCardDate.innerText = next.date;
+        underCardSize.innerText = next.size;
+        underCard.style.transform = 'scale(0.94)';
+        underCard.style.opacity = '0.9';
+      } else {
+        underCard.classList.add("hidden");
+      }
+    }
+
+    function doSwipeUp() {
+      if (queue.length === 0 || isAnimating) return;
+      isAnimating = true;
+      triggerHaptic(20);
+
+      const removed = queue.shift();
+      trashPool.push(removed);
+      selectedForDelete.add(removed.id);
+
+      history.push({ photo: removed, action: 'delete' });
+
+      topCard.style.transition = 'transform 0.26s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease-in';
+      topCard.style.transform = 'translate(0px, -650px) rotate(-6deg)';
+      topCard.style.opacity = '0';
+
+      underCard.style.transition = 'transform 0.26s cubic-bezier(0.2, 0, 0, 1), opacity 0.26s ease-out';
+      underCard.style.transform = 'scale(1.0)';
+      underCard.style.opacity = '1';
+
+      setTimeout(() => {
+        setupCurrentAndNextCards();
+        isAnimating = false;
+      }, 260);
+    }
+
+    function doSwipeDown() {
+      if (queue.length === 0 || isAnimating) return;
+      isAnimating = true;
+      triggerHaptic(15);
+
+      const kept = queue.shift();
+      keptSet.add(kept.id);
+      saveKeptSet(keptSet);
+
+      history.push({ photo: kept, action: 'keep' });
+
+      topCard.style.transition = 'transform 0.26s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease-in';
+      topCard.style.transform = 'translate(0px, 650px) rotate(6deg)';
+      topCard.style.opacity = '0';
+
+      underCard.style.transition = 'transform 0.26s cubic-bezier(0.2, 0, 0, 1), opacity 0.26s ease-out';
+      underCard.style.transform = 'scale(1.0)';
+      underCard.style.opacity = '1';
+
+      setTimeout(() => {
+        setupCurrentAndNextCards();
+        isAnimating = false;
+      }, 260);
+    }
+
+    function doSwipeSide(direction) {
+      if (queue.length === 0 || isAnimating) return;
+      triggerHaptic(20);
+
+      pendingMovePhoto = queue[0];
+      currentAlbumName.innerText = pendingMovePhoto.album;
+
+      albumSelectList.innerHTML = "";
+      AVAILABLE_ALBUMS.forEach(alb => {
+        const isCurrent = alb === pendingMovePhoto.album;
+        const btn = document.createElement("button");
+        btn.className = `p-3.5 rounded-2xl text-left border transition-all flex flex-col justify-between ${isCurrent ? 'bg-pink-50 border-pink-200 text-slate-800' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:border-blue-300'}`;
+        btn.innerHTML = `
+          <span class="text-xs font-bold truncate">${alb}</span>
+          <span class="text-[10px] text-slate-400 mt-1">${isCurrent ? '当前相册' : '点击移入'}</span>
+        `;
+        btn.addEventListener("click", () => {
+          triggerHaptic(25);
+          movePhotoToAlbum(pendingMovePhoto, alb);
+        });
+        albumSelectList.appendChild(btn);
+      });
+
+      moveAlbumModal.classList.remove("hidden");
+    }
+
+    function movePhotoToAlbum(photo, targetAlbum) {
+      photo.album = targetAlbum;
+      const moved = queue.shift();
+      keptSet.add(moved.id);
+      saveKeptSet(keptSet);
+      history.push({ photo: moved, action: 'move', targetAlbum });
+
+      moveAlbumModal.classList.add("hidden");
+
+      topCard.style.transition = 'transform 0.25s ease-in, opacity 0.25s ease-in';
+      topCard.style.transform = 'translate(600px, 0px) rotate(12deg)';
+      topCard.style.opacity = '0';
+
+      underCard.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+      underCard.style.transform = 'scale(1.0)';
+      underCard.style.opacity = '1';
+
+      setTimeout(() => {
+        setupCurrentAndNextCards();
+      }, 250);
+    }
+
+    closeMoveAlbumBtn.addEventListener("click", () => {
+      moveAlbumModal.classList.add("hidden");
+      topCard.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      topCard.style.transform = 'translate(0px, 0px) rotate(0deg)';
+      badgeMove.style.opacity = '0';
+    });
+
+    createNewAlbumBtn.addEventListener("click", () => {
+      const name = prompt("请输入新建相册名称：");
+      if (name && name.trim()) {
+        const cleanName = name.trim();
+        if (!AVAILABLE_ALBUMS.includes(cleanName)) {
+          AVAILABLE_ALBUMS.push(cleanName);
+        }
+        if (pendingMovePhoto) {
+          movePhotoToAlbum(pendingMovePhoto, cleanName);
+        }
+      }
+    });
+
+    btnUndo.addEventListener("click", () => {
+      if (history.length === 0 || isAnimating) return;
+      triggerHaptic(12);
+      const last = history.pop();
+      queue.unshift(last.photo);
+
+      if (last.action === 'keep' || last.action === 'move') {
+        keptSet.delete(last.photo.id);
+        saveKeptSet(keptSet);
+      } else if (last.action === 'delete') {
+        trashPool = trashPool.filter(p => p.id !== last.photo.id);
+        selectedForDelete.delete(last.photo.id);
+      }
+      setupCurrentAndNextCards();
+    });
+
+    function openReviewScreen() {
+      triggerHaptic(15);
+      renderReviewGrid();
+      reviewScreen.classList.remove("hidden");
+    }
+
+    btnFinishClean.addEventListener("click", openReviewScreen);
+    openReviewBtnFromHeader.addEventListener("click", openReviewScreen);
+
+    // 手势拖拽 & 单击大图检测
+    let startY = 0, startX = 0, currentY = 0, currentX = 0, isDragging = false;
+    let touchStartTime = 0;
+    const THRESHOLD = 85;
+    const TAP_THRESHOLD_PX = 8;
+    const TAP_THRESHOLD_MS = 280;
+
+    function handleTouchStart(x, y) {
+      if (queue.length === 0 || isAnimating) return;
+      startX = x;
+      startY = y;
+      currentX = 0;
+      currentY = 0;
+      touchStartTime = Date.now();
+      isDragging = true;
+      topCard.style.transition = 'none';
+      underCard.style.transition = 'none';
+    }
+
+    function handleTouchMove(x, y) {
+      if (!isDragging) return;
+      currentX = (x - startX) / (window.currentAppScale || 1);
+      currentY = (y - startY) / (window.currentAppScale || 1);
+
+      if (Math.hypot(currentX, currentY) > TAP_THRESHOLD_PX) {
+        const isHorizontal = Math.abs(currentX) > Math.abs(currentY) * 1.2;
+        const rot = (currentX * 0.04) + (currentY * 0.02);
+        topCard.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rot}deg)`;
+
+        const dist = Math.max(Math.abs(currentX), Math.abs(currentY));
+        const progress = Math.min(dist / THRESHOLD, 1);
+        underCard.style.transform = `scale(${0.94 + 0.06 * progress})`;
+        underCard.style.opacity = 0.9 + 0.1 * progress;
+
+        if (isHorizontal) {
+          badgeMove.style.opacity = Math.min(Math.abs(currentX) / 60, 1);
+          badgeDelete.style.opacity = 0;
+          badgeKeep.style.opacity = 0;
+        } else {
+          badgeMove.style.opacity = 0;
+          if (currentY < 0) {
+            badgeDelete.style.opacity = Math.min(-currentY / 60, 1);
+            badgeKeep.style.opacity = 0;
+          } else {
+            badgeKeep.style.opacity = Math.min(currentY / 60, 1);
+            badgeDelete.style.opacity = 0;
+          }
+        }
+      }
+    }
+
+    function handleTouchEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+
+      const duration = Date.now() - touchStartTime;
+      const moveDistance = Math.hypot(currentX, currentY);
+
+      if (moveDistance < TAP_THRESHOLD_PX && duration < TAP_THRESHOLD_MS) {
+        topCard.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        if (queue.length > 0) {
+          triggerHaptic(10);
+          openPreview(queue[0]);
+        }
+        return;
+      }
+
+      const absX = Math.abs(currentX);
+      const absY = Math.abs(currentY);
+
+      if (absX > THRESHOLD && absX > absY * 1.2) {
+        doSwipeSide(currentX > 0 ? "right" : "left");
+      } else if (currentY < -THRESHOLD) {
+        doSwipeUp();
+      } else if (currentY > THRESHOLD) {
+        doSwipeDown();
+      } else {
+        topCard.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        topCard.style.transform = 'translate(0px, 0px) rotate(0deg)';
+        underCard.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+        underCard.style.transform = 'scale(0.94)';
+        underCard.style.opacity = '0.9';
+        badgeDelete.style.opacity = 0;
+        badgeKeep.style.opacity = 0;
+        badgeMove.style.opacity = 0;
+      }
+    }
+
+    topCard.addEventListener("mousedown", e => handleTouchStart(e.clientX, e.clientY));
+    window.addEventListener("mousemove", e => handleTouchMove(e.clientX, e.clientY));
+    window.addEventListener("mouseup", handleTouchEnd);
+
+    topCard.addEventListener("touchstart", e => {
+      const touch = e.touches[0];
+      handleTouchStart(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    window.addEventListener("touchmove", e => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      handleTouchMove(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    window.addEventListener("touchend", handleTouchEnd);
+
+    // 单击放大看大图 Modal 逻辑
+    function openPreview(photo) {
+      if (photo.type === "video") {
+        previewMediaBox.innerHTML = `
+          <video src="${photo.url}" controls autoplay playsinline class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl"></video>
+        `;
+      } else {
+        previewMediaBox.innerHTML = `
+          <img src="${photo.url}" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" alt="${photo.name}" />
+        `;
+      }
+      previewName.innerText = photo.name;
+      previewMeta.innerText = `${photo.album} • ${photo.ratioDesc} • ${photo.date} • ${photo.size}`;
+      previewModal.classList.remove("hidden");
+    }
+
+    previewModal.addEventListener("click", () => {
+      triggerHaptic(10);
+      previewModal.classList.add("hidden");
+      previewMediaBox.innerHTML = "";
+    });
+
+    // 二次审核网格渲染
+    function renderReviewGrid() {
+      reviewGrid.innerHTML = "";
+      reviewSubtitle.innerText = `共 ${trashPool.length} 张待核对`;
+
+      if (trashPool.length === 0) {
+        reviewGrid.innerHTML = `
+          <div class="col-span-3 flex flex-col items-center justify-center py-20 text-slate-400">
+            <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-xs">本次未标记任何待删照片</p>
+          </div>
+        `;
+      } else {
+        trashPool.forEach(photo => {
+          const isSelected = selectedForDelete.has(photo.id);
+          const item = document.createElement("div");
+          item.className = "relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 cursor-pointer flex items-center justify-center";
+          
+          let thumbContent = `<img src="${photo.url}" class="w-full h-full object-cover" />`;
+          if (photo.type === "video") {
+            thumbContent = `<video src="${photo.url}" muted class="w-full h-full object-cover"></video><span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.2 rounded font-bold">▶ ${photo.duration || '视频'}</span>`;
+          } else if (photo.type === "gif") {
+            thumbContent += `<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.2 rounded font-bold">GIF</span>`;
+          }
+
+          item.innerHTML = `
+            ${thumbContent}
+            <button class="select-btn absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center border border-white transition-colors ${isSelected ? 'bg-[#FF7597] text-white' : 'bg-black/30 text-transparent'}">
+              ✓
+            </button>
+          `;
+
+          item.querySelector(".select-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            triggerHaptic(8);
+            if (selectedForDelete.has(photo.id)) {
+              selectedForDelete.delete(photo.id);
+            } else {
+              selectedForDelete.add(photo.id);
+            }
+            renderReviewGrid();
+          });
+
+          item.addEventListener("click", () => {
+            openPreview(photo);
+          });
+
+          reviewGrid.appendChild(item);
+        });
+      }
+
+      const selectedPhotos = trashPool.filter(p => selectedForDelete.has(p.id));
+      const totalBytes = selectedPhotos.reduce((sum, p) => sum + p.bytes, 0);
+      const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+
+      selectedSummary.innerText = `已选中 ${selectedPhotos.length} 张`;
+      spaceSummary.innerText = `预计释放 ${totalMB} MB`;
+      confirmTrashBtn.disabled = selectedPhotos.length === 0;
+      confirmTrashBtn.classList.toggle("opacity-40", selectedPhotos.length === 0);
+      toggleSelectAllBtn.innerText = selectedForDelete.size === trashPool.length && trashPool.length > 0 ? "取消全选" : "全选";
+    }
+
+    closeReviewBtn.addEventListener("click", () => {
+      triggerHaptic(10);
+      reviewScreen.classList.add("hidden");
+      setupCurrentAndNextCards();
+    });
+
+    toggleSelectAllBtn.addEventListener("click", () => {
+      triggerHaptic(10);
+      if (selectedForDelete.size === trashPool.length) {
+        selectedForDelete.clear();
+      } else {
+        trashPool.forEach(p => selectedForDelete.add(p.id));
+      }
+      renderReviewGrid();
+    });
+
+    confirmTrashBtn.addEventListener("click", () => {
+      triggerHaptic(30);
+      const deletedCount = selectedForDelete.size;
+      const totalBytes = trashPool.filter(p => selectedForDelete.has(p.id)).reduce((sum, p) => sum + p.bytes, 0);
+      const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+
+      // 真正移入回收站：记入永久删除集合
+      selectedForDelete.forEach(id => {
+        deletedSet.add(id);
+        keptSet.delete(id);
+      });
+      saveDeletedSet(deletedSet);
+      saveKeptSet(keptSet);
+
+      trashPool = trashPool.filter(p => !selectedForDelete.has(p.id));
+      selectedForDelete.clear();
+
+      reviewScreen.classList.add("hidden");
+      cleanScreen.classList.add("hidden");
+
+      resultDesc.innerHTML = `已安全将 <strong>${deletedCount}</strong> 项照片/视频移入系统相册回收站<br>本次为您释放了 <strong>${totalMB} MB</strong> 存储空间`;
+      resultModal.classList.remove("hidden");
+    });
+
+    finishToHomeBtn.addEventListener("click", () => {
+      triggerHaptic(10);
+      resultModal.classList.add("hidden");
+      homeScreen.classList.remove("hidden");
+      updateHomeDashboard();
+    });
+
+    // 初始化首页看板
+    updateHomeDashboard();
+
+    // 严格锁定图1的黄金内部比例，通过原生等比缩放无损铺满屏幕
+    window.currentAppScale = 1;
+    function applyEqualProportionScale() {
+      const wrapper = document.querySelector('.phone-wrapper');
+      if (!wrapper) return;
+
+      const targetW = 440;
+      const targetH = 920;
+
+      const scaleW = window.innerWidth / targetW;
+      const scaleH = window.innerHeight / targetH;
+      // 严格等比放大：保持图1内部所有元素、字体、间距绝对比例不变
+      const scale = Math.min(scaleW, scaleH);
+      window.currentAppScale = scale;
+
+      wrapper.style.zoom = scale;
+    }
+
+    window.addEventListener('resize', applyEqualProportionScale);
+    window.addEventListener('orientationchange', applyEqualProportionScale);
+    document.addEventListener('DOMContentLoaded', applyEqualProportionScale);
+    applyEqualProportionScale();
+  </script>
+</body>
+</html>

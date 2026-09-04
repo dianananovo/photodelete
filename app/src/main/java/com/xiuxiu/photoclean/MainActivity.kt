@@ -18,8 +18,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -206,13 +209,24 @@ fun MainApp(viewModel: PhotoViewModel) {
 
         // 移动相册弹窗
         movePhotoState?.let { photo ->
+            val actualAlbums = remember(allPhotos) {
+                allPhotos.map { it.albumName }.filter { it.isNotBlank() }.distinct().sorted()
+            }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { movePhotoState = null },
                 title = { Text("移动到相册", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
                 text = {
-                    Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                        val albums = listOf("家庭", "风景", "工作", "其他")
-                        albums.forEach { album ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (actualAlbums.isEmpty()) {
+                            Text("系统相册中未发现其他文件夹", color = androidx.compose.ui.graphics.Color.Gray)
+                        }
+                        actualAlbums.forEach { album ->
                             androidx.compose.material3.TextButton(
                                 onClick = {
                                     viewModel.swipeSideMove(photo, album)

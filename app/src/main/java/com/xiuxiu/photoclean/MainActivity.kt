@@ -24,6 +24,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -118,7 +119,8 @@ fun MainApp(viewModel: PhotoViewModel) {
     } else {
         val isLoading by viewModel.isLoading.collectAsState()
         val allPhotos by viewModel.allPhotos.collectAsState()
-        val processedIds by viewModel.processedIds.collectAsState()
+        val deletedIds by viewModel.deletedIds.collectAsState()
+        val keptIds by viewModel.keptIds.collectAsState()
         val photoQueue by viewModel.photoQueue.collectAsState()
         val trashPool by viewModel.trashPool.collectAsState()
         val selectedForDelete by viewModel.selectedForDelete.collectAsState()
@@ -129,7 +131,7 @@ fun MainApp(viewModel: PhotoViewModel) {
         val cleanedBytes by viewModel.cleanedBytes.collectAsState()
 
         val totalCount = allPhotos.size
-        val processedCount = processedIds.size
+        val processedCount = deletedIds.size + keptIds.size
         val pendingCount = (totalCount - processedCount).coerceAtLeast(0)
 
         when (currentScreen) {
@@ -163,8 +165,8 @@ fun MainApp(viewModel: PhotoViewModel) {
             }
             AppScreen.REVIEW -> {
                 ReviewScreen(
-                    trashPhotos = trashPool,
-                    selectedPhotos = selectedForDelete,
+                    trashList = trashPool,
+                    selectedItems = selectedForDelete,
                     onBack = { currentScreen = AppScreen.CLEAN },
                     onToggleSelect = { viewModel.toggleDeleteSelection(it) },
                     onToggleSelectAll = { viewModel.toggleSelectAll(it) },

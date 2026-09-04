@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,6 +88,9 @@ fun SwipeCard(
         modifier = modifier
             .offset { IntOffset(offsetX.value.roundToInt(), offsetY.value.roundToInt()) }
             .rotate(rotation)
+            .pointerInput(photo.id, "tap") {
+                detectTapGestures(onTap = { onCardClick() })
+            }
             .pointerInput(photo.id) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->

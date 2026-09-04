@@ -141,6 +141,8 @@ fun MainApp(viewModel: PhotoViewModel) {
         val cleanedCount by viewModel.cleanedCount.collectAsState()
         val cleanedBytes by viewModel.cleanedBytes.collectAsState()
 
+        var movePhotoState by remember { mutableStateOf<com.xiuxiu.photoclean.data.PhotoItem?>(null) }
+
         val totalCount = allPhotos.size
         val processedCount = deletedIds.size + keptIds.size
         val pendingCount = (totalCount - processedCount).coerceAtLeast(0)
@@ -174,6 +176,7 @@ fun MainApp(viewModel: PhotoViewModel) {
                     },
                     onSwipeUpDelete = { viewModel.swipeUpDelete(it) },
                     onSwipeDownKeep = { viewModel.swipeDownKeep(it) },
+                    onSwipeSideMove = { movePhotoState = it },
                     onUndo = { viewModel.undo() },
                     onFinishClean = { currentScreen = AppScreen.REVIEW },
                     onPreviewPhoto = { viewModel.setPreviewPhoto(it) }
@@ -199,6 +202,35 @@ fun MainApp(viewModel: PhotoViewModel) {
                     }
                 )
             }
+        }
+
+        // 移动相册弹窗
+        movePhotoState?.let { photo ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { movePhotoState = null },
+                title = { Text("移动到相册", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        val albums = listOf("家庭", "风景", "工作", "其他")
+                        albums.forEach { album ->
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    viewModel.swipeSideMove(photo, album)
+                                    movePhotoState = null
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(album)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { movePhotoState = null }) {
+                        Text("取消")
+                    }
+                }
+            )
         }
 
         // 大图预览弹窗

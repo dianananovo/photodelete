@@ -24,6 +24,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -67,7 +69,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             XiuXiuTheme {
-                MainApp(viewModel = viewModel)
+                Box(modifier = Modifier.fillMaxSize().background(BackgroundCream).systemBarsPadding()) {
+                    MainApp(viewModel = viewModel)
+                }
             }
         }
     }
@@ -91,6 +95,12 @@ fun MainApp(viewModel: PhotoViewModel) {
                 requiredPermission
             ) == PackageManager.PERMISSION_GRANTED
         )
+    }
+
+    LaunchedEffect(hasPermission) {
+        if (hasPermission && viewModel.allPhotos.value.isEmpty()) {
+            viewModel.scanPhotos()
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(

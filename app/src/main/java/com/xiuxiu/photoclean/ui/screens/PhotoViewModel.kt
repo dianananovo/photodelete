@@ -190,7 +190,6 @@ class PhotoViewModel(
         _deletedIds.value = _deletedIds.value + deletedIdList
         _keptIds.value = _keptIds.value - deletedIdList
 
-        _allPhotos.value = _allPhotos.value.filter { it.id !in deletedIdList }
         _trashPool.value = _trashPool.value.filter { it.id !in deletedIdList }
         _selectedForDelete.value = emptySet()
 

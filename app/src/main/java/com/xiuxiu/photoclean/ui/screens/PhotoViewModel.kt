@@ -178,6 +178,13 @@ class PhotoViewModel(
         )
     }
 
+    fun cancelSession() {
+        _trashPool.value = emptyList()
+        _selectedForDelete.value = emptySet()
+        _historyStack.value = emptyList()
+        refreshQueue()
+    }
+
     /**
      * 系统确认删除成功：将删除照片 ID 加入永久排除集合 deletedIds
      */
@@ -190,8 +197,10 @@ class PhotoViewModel(
         _deletedIds.value = _deletedIds.value + deletedIdList
         _keptIds.value = _keptIds.value - deletedIdList
 
-        _trashPool.value = _trashPool.value.filter { it.id !in deletedIdList }
+        // 彻底清空当次 session 的所有临时状态
+        _trashPool.value = emptyList()
         _selectedForDelete.value = emptySet()
+        _historyStack.value = emptyList()
 
         _cleanedCount.value = count
         _cleanedBytes.value = totalBytes

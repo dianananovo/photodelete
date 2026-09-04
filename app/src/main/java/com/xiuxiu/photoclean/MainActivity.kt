@@ -8,6 +8,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -154,18 +155,23 @@ fun MainApp(viewModel: PhotoViewModel) {
                         viewModel.refreshQueue()
                         currentScreen = AppScreen.CLEAN
                     },
-                    onResetProgress = {
-                        viewModel.resetProgress()
-                    }
+                    onResetProgress = { viewModel.resetProgress() }
                 )
             }
             AppScreen.CLEAN -> {
+                BackHandler {
+                    viewModel.cancelSession()
+                    currentScreen = AppScreen.HOME
+                }
                 CleanScreen(
                     isLoading = isLoading,
                     photoQueue = photoQueue,
                     trashCount = trashPool.size,
                     canUndo = historyStack.isNotEmpty(),
-                    onBackToHome = { currentScreen = AppScreen.HOME },
+                    onBackToHome = {
+                        viewModel.cancelSession()
+                        currentScreen = AppScreen.HOME
+                    },
                     onSwipeUpDelete = { viewModel.swipeUpDelete(it) },
                     onSwipeDownKeep = { viewModel.swipeDownKeep(it) },
                     onUndo = { viewModel.undo() },
@@ -174,6 +180,9 @@ fun MainApp(viewModel: PhotoViewModel) {
                 )
             }
             AppScreen.REVIEW -> {
+                BackHandler {
+                    currentScreen = AppScreen.CLEAN
+                }
                 ReviewScreen(
                     trashList = trashPool,
                     selectedItems = selectedForDelete,

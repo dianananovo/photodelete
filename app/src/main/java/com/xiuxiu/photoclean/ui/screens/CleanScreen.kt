@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -202,23 +203,27 @@ fun CleanScreen(
                                     .fillMaxSize()
                                     .scale(0.94f)
                             ) {
-                                SwipeCard(
-                                    photo = next,
-                                    modifier = Modifier.fillMaxSize(),
-                                    onSwipeUpDelete = {},
-                                    onSwipeDownKeep = {}
-                                )
+                                key(next.id) {
+                                    SwipeCard(
+                                        photo = next,
+                                        modifier = Modifier.fillMaxSize(),
+                                        onSwipeUpDelete = {},
+                                        onSwipeDownKeep = {}
+                                    )
+                                }
                             }
                         }
 
-                        SwipeCard(
-                            photo = current,
-                            modifier = Modifier.fillMaxSize(),
-                            onSwipeUpDelete = { onSwipeUpDelete(it) },
-                            onSwipeDownKeep = { onSwipeDownKeep(it) },
-                            onSwipeSideMove = { onSwipeSideMove(it) },
-                            onCardClick = { onPreviewPhoto(current) }
-                        )
+                        key(current.id) {
+                            SwipeCard(
+                                photo = current,
+                                modifier = Modifier.fillMaxSize(),
+                                onSwipeUpDelete = { onSwipeUpDelete(it) },
+                                onSwipeDownKeep = { onSwipeDownKeep(it) },
+                                onSwipeSideMove = { onSwipeSideMove(it) },
+                                onCardClick = { onPreviewPhoto(current) }
+                            )
+                        }
                     }
                 }
             }
